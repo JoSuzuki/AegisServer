@@ -17,9 +17,6 @@ pip
 psycopg2
 pycodestyle
 pyflakes
-pylint
-pylint-django
-pylint-plugin-utils
 python-dateutil
 pytz
 scikit-learn

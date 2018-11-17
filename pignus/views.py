@@ -3,15 +3,27 @@ from django.http import HttpResponse, JsonResponse
 import pandas as pd
 import xgboost as xgb
 import os
+from django.views.decorators.csrf import csrf_exempt
+
 
 from .models import User, XGBoostModel, Session, Probability
 
 # Create your views here.
+@csrf_exempt
 def single_request_login(request):
   directory_path = os.path.dirname(os.path.abspath(__file__))
   ai_models_path = directory_path + '/ai_models/'
 
   login = request.GET.get('login')
+  print(request.POST.dict())
+
+  # accelerometer = request.GET.get('accelerometer')
+  # gyroscope = request.GET.get('gyroscope')
+  # magnetometer = request.GET.get('magnetometer')
+  # keyPressEvent = request.GET.get('keyPressEvent')
+  # touchEvent = request.GET.get('touchEvent')
+
+
 
   user = get_object_or_404(User, login=login)
 
@@ -26,3 +38,11 @@ def single_request_login(request):
   mean_prob = i_pred_proba.mean()
 
   return JsonResponse({'auth': float(mean_prob)})
+
+@csrf_exempt
+def test(request):
+
+  print(request.GET.dict())
+  print(request.POST.dict())
+
+  return JsonResponse({'auth': float(1)})
