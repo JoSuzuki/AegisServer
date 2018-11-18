@@ -4,7 +4,9 @@ import pandas as pd
 import xgboost as xgb
 import os
 from django.views.decorators.csrf import csrf_exempt
-
+import json
+from . import data_treatment
+from io import StringIO
 
 from .models import User, XGBoostModel, Session, Probability
 
@@ -15,34 +17,54 @@ def single_request_login(request):
   ai_models_path = directory_path + '/ai_models/'
 
   login = request.GET.get('login')
-  print(request.POST.dict())
+  print(request.body)
 
-  # accelerometer = request.GET.get('accelerometer')
-  # gyroscope = request.GET.get('gyroscope')
-  # magnetometer = request.GET.get('magnetometer')
-  # keyPressEvent = request.GET.get('keyPressEvent')
-  # touchEvent = request.GET.get('touchEvent')
+  post = json.loads(request.body)
+
+  df_accelerometer = mapStringToMotionDf(post["Accelerometer"])
+  df_gyroscope = mapStringToMotionDf(post["Gyroscope"])
+  df_magnetometer = mapStringToMotionDf(post["Magnetometer"])
+  df_keyPressEvent = mapStringToKeyPressDf(post["KeyPress"])
+  df_keyboardTouchEvent = mapStringToKeyboardTouchDf(post["KeyboardTouch"])
 
 
+  df_features = data_treatment.frameSession(df_accelerometer, df_gyroscope, df_magnetometer, df_keyPressEvent, df_keyboardTouchEvent)
+  to_drop = ['Mag_Z_mean','Mag_X_mean','Mag_Y_mean','Mag_Y_std','Mag_Z_std','Mag_X_std']
+  df_features = df_features.set_index(["SessionID", 'WindowNumber']).drop(to_drop, axis=1)
+  df_features = df_features[sorted(list(df_features.columns))]
 
-  user = get_object_or_404(User, login=login)
+  user = get_object_or_404(User, login="toto")
 
-  clf = xgb.XGBClassifier(n_estimators=90, max_depth=4, random_state=31, colsample_bytree=0.5, colsample_bylevel=0.5, learning_rate=0.09, subsample=0.9) 
+  clf = xgb.XGBClassifier(n_estimators=90, max_depth=9, random_state=31, colsample_bytree=0.6, colsample_bylevel=0.5, learning_rate=0.11, subsample=0.9)
   clf.load_model(ai_models_path + user.xgboostmodel.file_path)
-  x_train = pd.read_csv(ai_models_path + 'x_train.csv')
-  to_drop = []
-  x_train = x_train.set_index(["SessionID", 'WindowNumber']).drop(to_drop, axis=1)
 
-  i_pred_proba = clf.predict_proba(x_train)
-  print(i_pred_proba)
-  mean_prob = i_pred_proba.mean()
+  df_features.to_csv(directory_path +'/weird.csv', index=True)
+  print(df_features.head())
+  predict = clf.predict_proba(df_features)
+  print(predict[:, 1])
+  predict = predict[:, 1]
+  mean_prob = predict.mean()
 
   return JsonResponse({'auth': float(mean_prob)})
+
+
+def mapStringToMotionDf(string):
+  return pd.read_csv(StringIO(string), names=['Systime','EventTime','ActivityID','X','Y','Z','Phone_orientation'])
+
+def mapStringToKeyPressDf(string):
+  return pd.read_csv(StringIO(string), names=['Systime','PressTime','PressType','ActivityID','KeyID','Phone_orientation'])
+
+def mapStringToKeyboardTouchDf(string):
+  return pd.read_csv(StringIO(string), names=['Systime','EventTime','ActivityID','Pointer_count','PointerID','ActionID','X','Y','Pressure','Contact_size','Phone_orientation'])
+
 
 @csrf_exempt
 def test(request):
 
-  print(request.GET.dict())
-  print(request.POST.dict())
+  print('request.body' + str(request.body))
+  print('request.POST' + str(request.POST))
+
+  # a = json.loads(request.body)
+  # print(a["login"])
 
   return JsonResponse({'auth': float(1)})

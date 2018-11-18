@@ -6,7 +6,7 @@ def createSkeleton(keyPressEvent_df):
   aux = keyPressEvent_df[['Systime','SessionID']].groupby('SessionID').agg([np.min,np.max]).Systime
   aux = aux.reset_index()
   bla = []
-  step = 5000
+  step = 10000
   for _,row in aux.iterrows():
       i = 0
       t0 = row.amin
@@ -19,6 +19,7 @@ def createSkeleton(keyPressEvent_df):
           t0 += step
           i += 1
           bla.append(aux_dict)
+          print(aux_dict)
   return (pd.DataFrame(bla))
 
 def windowDf(df,skeleton):
@@ -137,6 +138,10 @@ def preProcessingKeyBoardTouchEvent(df):
       'Contact_size_mean':'mean',
       'Contact_size_std': 'std'
     },
+    'Pressure': {
+        'Pressure_mean':'mean',
+        'Pressure_std': 'std'
+    },
 })
   grouped_df.columns = grouped_df.columns.droplevel()
   grouped_df = grouped_df.reset_index()
@@ -144,7 +149,9 @@ def preProcessingKeyBoardTouchEvent(df):
 
 
 def frameSession(accelerometer_df, gyroscope_df, magnetometer_df, keyPressEvent_df, keyBoardTouchEvent_df):
+  print(keyPressEvent_df.head())
   skeleton = createSkeleton(keyPressEvent_df)
+  print(skeleton.head())
 
   accelerometer_df['SessionID'] = accelerometer_df.ActivityID
   gyroscope_df['SessionID'] = gyroscope_df.ActivityID
