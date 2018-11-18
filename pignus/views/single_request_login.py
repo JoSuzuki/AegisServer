@@ -1,20 +1,19 @@
-from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, JsonResponse
+import os
+import json
+from django.shortcuts import get_object_or_404
 import pandas as pd
 import xgboost as xgb
-import os
+from pignus import data_treatment
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-import json
-from . import data_treatment
 from io import StringIO
 
-from .models import User, XGBoostModel, Session, Probability
+from pignus.models import User, XGBoostModel, Session, Probability
 
-# Create your views here.
 @csrf_exempt
 def single_request_login(request):
   directory_path = os.path.dirname(os.path.abspath(__file__))
-  ai_models_path = directory_path + '/ai_models/'
+  ai_models_path = directory_path + '/../ai_models/'
 
   login = request.GET.get('login')
   print(request.body)
@@ -26,7 +25,6 @@ def single_request_login(request):
   df_magnetometer = mapStringToMotionDf(post["Magnetometer"])
   df_keyPressEvent = mapStringToKeyPressDf(post["KeyPress"])
   df_keyboardTouchEvent = mapStringToKeyboardTouchDf(post["KeyboardTouch"])
-
 
   df_features = data_treatment.frameSession(df_accelerometer, df_gyroscope, df_magnetometer, df_keyPressEvent, df_keyboardTouchEvent)
   to_drop = ['Mag_Z_mean','Mag_X_mean','Mag_Y_mean','Mag_Y_std','Mag_Z_std','Mag_X_std']
@@ -57,14 +55,3 @@ def mapStringToKeyPressDf(string):
 def mapStringToKeyboardTouchDf(string):
   return pd.read_csv(StringIO(string), names=['Systime','EventTime','ActivityID','Pointer_count','PointerID','ActionID','X','Y','Pressure','Contact_size','Phone_orientation'])
 
-
-@csrf_exempt
-def test(request):
-
-  print('request.body' + str(request.body))
-  print('request.POST' + str(request.POST))
-
-  # a = json.loads(request.body)
-  # print(a["login"])
-
-  return JsonResponse({'auth': float(1)})

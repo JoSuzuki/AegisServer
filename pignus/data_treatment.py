@@ -204,3 +204,6 @@ def frameSession(accelerometer_df, gyroscope_df, magnetometer_df, keyPressEvent_
   .merge(gyroscope_df, how='left', on=['SessionID', 'WindowNumber'])
   .merge(magnetometer_df, how='left', on=['SessionID', 'WindowNumber']))
   return df_features
+
+def printSomething():
+  print('Something')
