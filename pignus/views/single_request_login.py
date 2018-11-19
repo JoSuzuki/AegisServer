@@ -15,9 +15,6 @@ def single_request_login(request):
   directory_path = os.path.dirname(os.path.abspath(__file__))
   ai_models_path = directory_path + '/../ai_models/'
 
-  login = request.GET.get('login')
-  print(request.body)
-
   post = json.loads(request.body)
 
   df_accelerometer = mapStringToMotionDf(post["Accelerometer"])
@@ -31,8 +28,10 @@ def single_request_login(request):
   df_features = df_features.set_index(["SessionID", 'WindowNumber']).drop(to_drop, axis=1)
   df_features = df_features[sorted(list(df_features.columns))]
 
-  user = get_object_or_404(User, login="toto")
+  login = post['Login']
+  print(login)
 
+  user = get_object_or_404(User, login=login)
   clf = xgb.XGBClassifier(n_estimators=90, max_depth=9, random_state=31, colsample_bytree=0.6, colsample_bylevel=0.5, learning_rate=0.11, subsample=0.9)
   clf.load_model(ai_models_path + user.xgboostmodel.file_path)
 

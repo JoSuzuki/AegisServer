@@ -7,7 +7,5 @@ def test(request):
 
   print('request.body' + str(request.body))
   print('request.POST' + str(request.POST))
-  # a = json.loads(request.body)
-  # print(a["login"])
-
+  # import code; code.interact(local=dict(globals(), **locals()))
   return JsonResponse({'auth': float(1)})

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import time
 
 def createSkeleton(keyPressEvent_df):
   keyPressEvent_df['SessionID'] = keyPressEvent_df.ActivityID
@@ -19,7 +20,6 @@ def createSkeleton(keyPressEvent_df):
           t0 += step
           i += 1
           bla.append(aux_dict)
-          print(aux_dict)
   return (pd.DataFrame(bla))
 
 def windowDf(df,skeleton):
@@ -46,7 +46,6 @@ def windowDf(df,skeleton):
       count = count + 1
       j = j + 1
       if (j == 100000):
-          print(count)
           j = 0
   df['WindowNumber'] = aux_list
   return df
@@ -149,7 +148,19 @@ def preProcessingKeyBoardTouchEvent(df):
 
 
 def frameSession(accelerometer_df, gyroscope_df, magnetometer_df, keyPressEvent_df, keyBoardTouchEvent_df):
-  print(keyPressEvent_df.head())
+  # print('keyPressEvent_df\n', keyPressEvent_df.head())
+  # print('accelerometer_df\n', accelerometer_df.head())
+  # print('gyroscope_df\n', gyroscope_df.head())
+  # print('magnetometer_df\n', magnetometer_df.head())
+  # print('keyBoardTouchEvent_df\n', keyBoardTouchEvent_df.head())
+  # import code; code.interact(local=dict(globals(), **locals()))
+  printStartSeparator()
+  printDfInfo(accelerometer_df, 'accelerometer')
+  printDfInfo(gyroscope_df, 'gyroscope')
+  printDfInfo(magnetometer_df, 'magnetometer')
+  printDfInfo(keyPressEvent_df, 'keyPressEvent')
+  printDfInfo(keyBoardTouchEvent_df, 'keyBoardTouchEvent')
+  printEndSeparator()
   skeleton = createSkeleton(keyPressEvent_df)
   print(skeleton.head())
 
@@ -205,5 +216,14 @@ def frameSession(accelerometer_df, gyroscope_df, magnetometer_df, keyPressEvent_
   .merge(magnetometer_df, how='left', on=['SessionID', 'WindowNumber']))
   return df_features
 
-def printSomething():
-  print('Something')
+def printStartSeparator():
+  print("******************************************************\n\n\n\n\n\n\n")
+
+def printEndSeparator():
+  print("\n\n\n\n\n\n\n******************************************************")
+
+
+def printDfInfo(df, variableName):
+  print(variableName + ': ')
+  print('Df size: ' + str(len(df)))
+  print('Time interval: ' + str((df.Systime[len(df) - 1] - df.Systime[0])/1000) + 'segs')
