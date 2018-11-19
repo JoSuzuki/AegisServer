@@ -24,7 +24,7 @@ def single_request_login(request):
   df_keyboardTouchEvent = mapStringToKeyboardTouchDf(post["KeyboardTouch"])
 
   df_features = data_treatment.frameSession(df_accelerometer, df_gyroscope, df_magnetometer, df_keyPressEvent, df_keyboardTouchEvent)
-  to_drop = ['Mag_Z_mean','Mag_X_mean','Mag_Y_mean','Mag_Y_std','Mag_Z_std','Mag_X_std']
+  to_drop = ['Mag_Z_mean','Mag_X_mean','Mag_Y_mean','Mag_Y_std','Mag_Z_std','Mag_X_std','Contact_size_mean','Pressure_mean','Pressure_std','Contact_size_std']
   df_features = df_features.set_index(["SessionID", 'WindowNumber']).drop(to_drop, axis=1)
   df_features = df_features[sorted(list(df_features.columns))]
 
@@ -33,6 +33,7 @@ def single_request_login(request):
 
   user = get_object_or_404(User, login=login)
   clf = xgb.XGBClassifier(n_estimators=90, max_depth=9, random_state=31, colsample_bytree=0.6, colsample_bylevel=0.5, learning_rate=0.11, subsample=0.9)
+  print('User model loaded:' + user.xgboostmodel.file_path)
   clf.load_model(ai_models_path + user.xgboostmodel.file_path)
 
   df_features.to_csv(directory_path +'/weird.csv', index=True)
