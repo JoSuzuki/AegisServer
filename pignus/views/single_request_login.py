@@ -62,8 +62,9 @@ def single_request_login(request):
   auth = 0
   if (mean_prob > auth_threshold):
     auth = 1
-
-  return JsonResponse({'prob': float(mean_prob), 'auth': float(auth)})
+  print('mean_prob: ' + str(mean_prob))
+  print('auth: ' + str(auth))
+  return JsonResponse({'prob': float(mean_prob), 'auth': int(auth)})
 
 
 def mapStringToMotionDf(string):
