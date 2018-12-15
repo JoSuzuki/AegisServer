@@ -7,6 +7,7 @@ from pignus import data_treatment
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from io import StringIO
+import re
 
 from pignus.models import User, XGBoostModel, Session, Probability
 
@@ -24,7 +25,21 @@ def single_request_login(request):
   df_keyboardTouchEvent = mapStringToKeyboardTouchDf(post["KeyboardTouch"])
 
   df_features = data_treatment.frameSession(df_accelerometer, df_gyroscope, df_magnetometer, df_keyPressEvent, df_keyboardTouchEvent)
-  df_features.to_csv(directory_path + '/../login_data/' + list(df_features.SessionID.unique())[0] + '.csv', index=False)
+
+  SessionID = list(df_features.SessionID.unique())[0]
+  subject_login = find_subject(SessionID)
+  print(subject_login)
+
+  try:
+    subject = User.objects.get(login=subject_login)
+  except User.DoesNotExist:
+    subject = User(login=subject_login)
+    subject.save()
+    os.mkdir(directory_path + '/../login_data/' + subject_login)
+  
+  df_features['SessionID'] = df_features.apply(find_subject_df,axis=1)
+  df_features.to_csv(directory_path + '/../login_data/' + subject_login + '/' + SessionID + '.csv', index=False)
+
   to_drop = ['Mag_Z_mean','Mag_X_mean','Mag_Y_mean','Mag_Y_std','Mag_Z_std','Mag_X_std','Contact_size_mean','Pressure_mean','Pressure_std','Contact_size_std']
   df_features = df_features.set_index(["SessionID", 'WindowNumber']).drop(to_drop, axis=1)
   df_features = df_features[sorted(list(df_features.columns))]
@@ -43,7 +58,12 @@ def single_request_login(request):
   predict = predict[:, 1]
   mean_prob = predict.mean()
 
-  return JsonResponse({'auth': float(mean_prob)})
+  auth_threshold = 0.9
+  auth = 0
+  if (mean_prob > auth_threshold):
+    auth = 1
+
+  return JsonResponse({'prob': float(mean_prob), 'auth': float(auth)})
 
 
 def mapStringToMotionDf(string):
@@ -55,3 +75,15 @@ def mapStringToKeyPressDf(string):
 def mapStringToKeyboardTouchDf(string):
   return pd.read_csv(StringIO(string), names=['Systime','EventTime','ActivityID','Pointer_count','PointerID','ActionID','X','Y','Pressure','Contact_size','Phone_orientation'])
 
+
+def find_subject(SessionID):
+  reg_pat = r'[a-z]+(([A-Z]|[a-z])+)'
+  regex = re.compile(reg_pat)
+  s = regex.search(SessionID)
+  return (s.group(1))
+
+def find_subject_df(row):
+    reg_pat = r'[a-z]+(([A-Z]|[a-z])+)'
+    regex = re.compile(reg_pat)
+    s = regex.search(row.SessionID)
+    return (s.group(1))
